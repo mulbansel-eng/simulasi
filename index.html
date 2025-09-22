@@ -1,202 +1,111 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard Sekolah</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Sistem Laporan Sekolah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; display: flex; }
-    .sidebar { width: 220px; background: #2c3e50; color: #fff; height: 100vh; padding: 20px; box-sizing: border-box; }
-    .sidebar h2 { text-align: center; margin-bottom: 30px; }
-    .sidebar a { display: block; padding: 10px; margin: 5px 0; text-decoration: none; color: #ecf0f1; border-radius: 5px; }
-    .sidebar a:hover { background: #34495e; }
-
-    .main { flex: 1; padding: 20px; background: #ecf0f1; overflow-y: auto; }
-    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-    .card { background: #fff; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .card h3 { margin: 0; font-size: 18px; color: #2c3e50; }
-    .card p { font-size: 22px; font-weight: bold; margin: 10px 0 0; }
-
-    .box { background: #fff; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .box h3 { margin-top: 0; color: #2c3e50; }
-
-    form input, form select { padding: 8px; margin: 5px 0; width: 100%; border: 1px solid #ccc; border-radius: 5px; }
-    form button { background: #27ae60; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-    form button:hover { background: #219150; }
-
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    table, th, td { border: 1px solid #ddd; }
-    th, td { padding: 8px; text-align: center; }
-    th { background: #3498db; color: #fff; }
+    .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,.8); }
+    @media (prefers-color-scheme: dark){ body{ background:#0b1220; } }
   </style>
 </head>
-<body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Menu</h2>
-    <a href="#dashboard">Dashboard</a>
-    <a href="#input">Input Data</a>
-    <a href="#laporan">Laporan</a>
-  </div>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-sky-100 flex items-center justify-center p-4">
+  <main class="w-full max-w-md">
+    <div class="glass rounded-2xl shadow-2xl p-6 md:p-8">
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold select-none">SL</div>
+        <div>
+          <h1 class="text-2xl font-bold leading-tight">Sistem Laporan Bulanan Sekolah</h1>
+          <p class="text-sm text-gray-500">Masuk untuk melanjutkan</p>
+        </div>
+      </div>
 
-  <!-- Main -->
-  <div class="main">
-    <h1>Dashboard Sekolah</h1>
+      <!-- Alert -->
+      <div id="alert" class="hidden mb-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm p-3"></div>
 
-    <!-- Ringkasan -->
-    <div class="cards">
-      <div class="card"><h3>Jumlah Siswa</h3><p id="siswa">0</p></div>
-      <div class="card"><h3>Jumlah Guru</h3><p id="guru">0</p></div>
-      <div class="card"><h3>Sarana</h3><p id="sarana">0</p></div>
-      <div class="card"><h3>Prasarana</h3><p id="prasarana">0</p></div>
-    </div>
+      <!-- Form -->
+      <form id="loginForm" class="space-y-4" autocomplete="on">
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <div class="relative">
+            <input id="username" name="username" class="w-full rounded-xl border px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="misal: admin / operator" required />
+            <i class="absolute right-3 top-2.5 text-gray-400" data-lucide="user"></i>
+          </div>
+        </div>
 
-    <!-- Status -->
-    <div class="box"><h3>Status Kelengkapan Input</h3><p id="status-input">Belum Lengkap</p></div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div class="relative">
+            <input id="password" name="password" type="password" class="w-full rounded-xl border px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="password" required />
+            <button type="button" id="togglePass" class="absolute right-2 top-1.5 p-2 text-gray-500 hover:text-gray-700" tabindex="-1" aria-label="Tampilkan/Sembunyikan password">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+          <p id="capsWarn" class="hidden mt-1 text-xs text-amber-600">Caps Lock aktif</p>
+        </div>
 
-    <!-- Notifikasi -->
-    <div class="box" id="notifikasi-box"><h3>Notifikasi</h3><p id="notifikasi">Menunggu data...</p></div>
-
-    <!-- Grafik -->
-    <div class="box"><h3>Grafik Jumlah Siswa per Bulan</h3><canvas id="chartSiswa"></canvas></div>
-
-    <!-- Form Input -->
-    <div class="box" id="input">
-      <h3>Input Data Bulanan</h3>
-      <form id="formData">
-        <label>Bulan:</label>
-        <select id="bulan">
-          <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option>
-          <option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option>
-          <option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
-        </select>
-        <label>Jumlah Siswa:</label><input type="number" id="inputSiswa" required>
-        <label>Jumlah Guru:</label><input type="number" id="inputGuru" required>
-        <label>Sarana:</label><input type="number" id="inputSarana" required>
-        <label>Prasarana:</label><input type="number" id="inputPrasarana" required>
-        <button type="submit">Simpan Data</button>
+        <button class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 text-white py-2.5 font-medium shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600">
+          <i data-lucide="log-in"></i>
+          Masuk
+        </button>
       </form>
+
+      <!-- Demo creds -->
+      <div class="mt-6 text-xs text-gray-500">
+        Demo akun: <span class="font-semibold">admin/admin</span>, <span class="font-semibold">operator/operator</span>
+      </div>
     </div>
 
-    <!-- Laporan -->
-    <div class="box" id="laporan">
-      <h3>Laporan Data Bulanan</h3>
-      <table>
-        <thead><tr><th>Bulan</th><th>Siswa</th><th>Guru</th><th>Sarana</th><th>Prasarana</th></tr></thead>
-        <tbody id="laporanBody"></tbody>
-      </table>
-    </div>
-  </div>
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden bg-gray-900 text-white text-sm px-4 py-2 rounded-full shadow"></div>
+  </main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxuquk-6yxk9BaErA0ZCy0ORLCyu6AsiZFbClKd19FrCa0ix7Jkb9ki6t3Qgkr9bnLh/exec"; // ganti dengan URL WebApp dari Apps Script
+    const $ = (s)=>document.querySelector(s);
 
-    let data = {
-      siswa: 0, guru: 0, sarana: 0, prasarana: 0,
-      laporan: {}
-    };
+    // Daftar akun demo (bisa diganti dengan validasi database/server)
+    const DEMO_USERS = [
+      { username:'admin', pass:'admin' },
+      { username:'operator', pass:'operator' }
+    ];
 
-    // Chart.js
-    let ctx = document.getElementById("chartSiswa").getContext("2d");
-    let chartSiswa = new Chart(ctx, {
-      type: "line",
-      data: { labels: [], datasets: [{ label: "Jumlah Siswa", data: [], borderColor: "blue", fill: false }] }
+    function showAlert(msg){ const a = $('#alert'); a.textContent = msg; a.classList.remove('hidden'); }
+    function hideAlert(){ $('#alert').classList.add('hidden'); }
+    function toast(msg){ const el = $('#toast'); el.textContent = msg; el.classList.remove('hidden'); setTimeout(()=> el.classList.add('hidden'), 2200); }
+
+    // Toggle password visibility
+    $('#togglePass').addEventListener('click', ()=>{
+      const inp = $('#password');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      const icon = $('#togglePass i');
+      icon.setAttribute('data-lucide', inp.type === 'password' ? 'eye' : 'eye-off');
+      lucide.createIcons();
     });
 
-    function updateDashboard() {
-      document.getElementById("siswa").innerText = data.siswa;
-      document.getElementById("guru").innerText = data.guru;
-      document.getElementById("sarana").innerText = data.sarana;
-      document.getElementById("prasarana").innerText = data.prasarana;
-    }
-
-    function updateLaporan() {
-      let body = document.getElementById("laporanBody");
-      body.innerHTML = "";
-      for (let b in data.laporan) {
-        let d = data.laporan[b];
-        body.innerHTML += `<tr><td>${b}</td><td>${d.siswa}</td><td>${d.guru}</td><td>${d.sarana}</td><td>${d.prasarana}</td></tr>`;
-      }
-    }
-
-    function updateChart() {
-      chartSiswa.data.labels = Object.keys(data.laporan);
-      chartSiswa.data.datasets[0].data = Object.values(data.laporan).map(d => d.siswa);
-      chartSiswa.update();
-    }
-
-    function loadData() {
-      fetch(API_URL)
-        .then(res => res.json())
-        .then(rows => {
-          data.laporan = {};
-          rows.forEach(r => {
-            data.laporan[r.bulan] = {
-              siswa: parseInt(r.siswa),
-              guru: parseInt(r.guru),
-              sarana: parseInt(r.sarana),
-              prasarana: parseInt(r.prasarana)
-            };
-          });
-
-          if (rows.length > 0) {
-            let last = rows[rows.length - 1];
-            data.siswa = parseInt(last.siswa);
-            data.guru = parseInt(last.guru);
-            data.sarana = parseInt(last.sarana);
-            data.prasarana = parseInt(last.prasarana);
-          }
-
-          updateDashboard();
-          updateLaporan();
-          updateChart();
-
-          let belum = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"]
-            .filter(b => !(b in data.laporan));
-          document.getElementById("notifikasi").innerText = belum.length > 0
-            ? "Data bulan berikut belum diinput: " + belum.join(", ")
-            : "Semua data sudah lengkap.";
-          document.getElementById("status-input").innerText = belum.length > 0 ? "Belum Lengkap" : "Lengkap";
-        })
-        .catch(err => console.error("Gagal ambil data:", err));
-    }
-
-    // Fix: Simpan data pakai URLSearchParams (bukan JSON)
-    document.getElementById("formData").addEventListener("submit", async function(e) {
-      e.preventDefault();
-
-      let bulan = document.getElementById("bulan").value;
-      let siswa = document.getElementById("inputSiswa").value;
-      let guru = document.getElementById("inputGuru").value;
-      let sarana = document.getElementById("inputSarana").value;
-      let prasarana = document.getElementById("inputPrasarana").value;
-
-      const body = new URLSearchParams();
-      body.append("bulan", bulan);
-      body.append("siswa", siswa);
-      body.append("guru", guru);
-      body.append("sarana", sarana);
-      body.append("prasarana", prasarana);
-
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-          body: body.toString()
-        });
-
-        const text = await res.text();
-        let msg;
-        try { msg = JSON.parse(text).message || text; } catch(e){ msg = text; }
-        alert(msg);
-        loadData();
-      } catch (err) {
-        alert("Gagal kirim data: " + err);
-        console.error(err);
-      }
+    // Caps lock detection
+    $('#password').addEventListener('keyup', (e)=>{
+      $('#capsWarn').classList.toggle('hidden', !e.getModifierState('CapsLock'));
     });
 
-    loadData();
+    // Submit login
+    $('#loginForm').addEventListener('submit', (e)=>{
+      e.preventDefault(); hideAlert();
+      const u = $('#username').value.trim();
+      const p = $('#password').value.trim();
+
+      const ok = DEMO_USERS.find(x=>x.username===u && x.pass===p);
+      if(!ok){ showAlert('Login gagal. Periksa username dan password.'); return; }
+
+      toast('Login berhasil');
+      // Redirect ke inputdata.html
+      setTimeout(()=>{ window.location.href = 'inputdata.html'; }, 800);
+    });
+
+    // Init icons
+    document.addEventListener('DOMContentLoaded', ()=> lucide.createIcons());
   </script>
 </body>
 </html>
