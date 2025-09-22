@@ -6,13 +6,11 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; display: flex; }
-    /* Sidebar */
     .sidebar { width: 220px; background: #2c3e50; color: #fff; height: 100vh; padding: 20px; box-sizing: border-box; }
     .sidebar h2 { text-align: center; margin-bottom: 30px; }
     .sidebar a { display: block; padding: 10px; margin: 5px 0; text-decoration: none; color: #ecf0f1; border-radius: 5px; }
     .sidebar a:hover { background: #34495e; }
 
-    /* Main */
     .main { flex: 1; padding: 20px; background: #ecf0f1; overflow-y: auto; }
     .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
     .card { background: #fff; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -91,7 +89,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyv6u_ssuHrQcG8bJvI5tbMOOfdklhlG_WVzCx0d335TFP5hpb0l6moJd0iKtQ2oOY0/exec"; // ganti dengan URL WebApp dari Apps Script
+    const API_URL = "https://script.google.com/macros/s/AKfycbxuquk-6yxk9BaErA0ZCy0ORLCyu6AsiZFbClKd19FrCa0ix7Jkb9ki6t3Qgkr9bnLh/exec"; // ganti dengan URL WebApp dari Apps Script
 
     let data = {
       siswa: 0, guru: 0, sarana: 0, prasarana: 0,
@@ -105,7 +103,6 @@
       data: { labels: [], datasets: [{ label: "Jumlah Siswa", data: [], borderColor: "blue", fill: false }] }
     });
 
-    // Update ringkasan
     function updateDashboard() {
       document.getElementById("siswa").innerText = data.siswa;
       document.getElementById("guru").innerText = data.guru;
@@ -113,7 +110,6 @@
       document.getElementById("prasarana").innerText = data.prasarana;
     }
 
-    // Update laporan
     function updateLaporan() {
       let body = document.getElementById("laporanBody");
       body.innerHTML = "";
@@ -123,14 +119,12 @@
       }
     }
 
-    // Update grafik
     function updateChart() {
       chartSiswa.data.labels = Object.keys(data.laporan);
       chartSiswa.data.datasets[0].data = Object.values(data.laporan).map(d => d.siswa);
       chartSiswa.update();
     }
 
-    // Ambil data dari Google Sheets
     function loadData() {
       fetch(API_URL)
         .then(res => res.json())
@@ -167,31 +161,41 @@
         .catch(err => console.error("Gagal ambil data:", err));
     }
 
-    // Simpan data ke Google Sheets
-    document.getElementById("formData").addEventListener("submit", function(e) {
+    // Fix: Simpan data pakai URLSearchParams (bukan JSON)
+    document.getElementById("formData").addEventListener("submit", async function(e) {
       e.preventDefault();
+
       let bulan = document.getElementById("bulan").value;
-      let siswa = parseInt(document.getElementById("inputSiswa").value);
-      let guru = parseInt(document.getElementById("inputGuru").value);
-      let sarana = parseInt(document.getElementById("inputSarana").value);
-      let prasarana = parseInt(document.getElementById("inputPrasarana").value);
+      let siswa = document.getElementById("inputSiswa").value;
+      let guru = document.getElementById("inputGuru").value;
+      let sarana = document.getElementById("inputSarana").value;
+      let prasarana = document.getElementById("inputPrasarana").value;
 
-      let payload = { bulan, siswa, guru, sarana, prasarana };
+      const body = new URLSearchParams();
+      body.append("bulan", bulan);
+      body.append("siswa", siswa);
+      body.append("guru", guru);
+      body.append("sarana", sarana);
+      body.append("prasarana", prasarana);
 
-      fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.text())
-      .then(msg => {
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body: body.toString()
+        });
+
+        const text = await res.text();
+        let msg;
+        try { msg = JSON.parse(text).message || text; } catch(e){ msg = text; }
         alert(msg);
-        loadData(); // refresh data setelah simpan
-      })
-      .catch(err => alert("Error: " + err));
+        loadData();
+      } catch (err) {
+        alert("Gagal kirim data: " + err);
+        console.error(err);
+      }
     });
 
-    // Load awal
     loadData();
   </script>
 </body>
